@@ -6,11 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "dotenv -e .env.local -- npx ts-node --project tsconfig.json -e \"require('ts-node').register({transpileOnly:true});require('./scripts/seed-knowledge-base.ts')\""
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.3",
+    "csv-parse": "^6.2.1",
     "googleapis": "^171.4.0",
     "next": "16.2.1",
     "openai": "^6.32.0",
@@ -22,9 +24,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

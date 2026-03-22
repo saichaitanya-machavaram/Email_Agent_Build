@@ -26,7 +26,8 @@
       "Bash(curl:*)",
       "Bash(git commit -m \"Phase 1 complete: auth working, inbox placeholder:*)",
       "Bash(npx tsc:*)",
-      "Bash(git commit -m \"Phase 2: Gmail integration, inbox UI:*)"
+      "Bash(git commit -m \"Phase 2: Gmail integration, inbox UI:*)",
+      "Bash(git commit -m \"Phase 3: RAG pipeline, AI reply generation, reply page:*)"
     ]
   }
 }
