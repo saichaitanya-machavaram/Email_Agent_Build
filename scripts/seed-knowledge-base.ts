@@ -23,7 +23,7 @@ async function main() {
   console.log('Reading CSV...')
   const csvPath = path.join(process.cwd(), 'vizaura_courses_150.csv')
   const raw = fs.readFileSync(csvPath, 'utf-8')
-  const records = parse(raw, { columns: true, skip_empty_lines: true })
+  const records = parse(raw, { columns: true, skip_empty_lines: true }) as Record<string, string>[]
 
   console.log(`Found ${records.length} courses. Embedding and inserting...`)
 
