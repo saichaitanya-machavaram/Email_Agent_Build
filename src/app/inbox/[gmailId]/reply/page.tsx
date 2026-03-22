@@ -53,6 +53,10 @@ export default function ReplyPage() {
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+  const [starRating, setStarRating] = useState(0)
+  const [feedbackText, setFeedbackText] = useState('')
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const [submittingFeedback, setSubmittingFeedback] = useState(false)
 
   const setStepStatus = (index: number, status: Step['status']) => {
     setSteps(prev => prev.map((s, i) => i === index ? { ...s, status } : s))
@@ -154,23 +158,96 @@ export default function ReplyPage() {
     }
   }
 
+  const handleFeedback = async () => {
+    if (!replyId || starRating === 0) return
+    setSubmittingFeedback(true)
+    try {
+      await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ replyId, starRating, feedbackText }),
+      })
+      setFeedbackSubmitted(true)
+    } finally {
+      setSubmittingFeedback(false)
+    }
+  }
+
   if (sent) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="bg-white border border-slate-200 rounded-2xl shadow p-10 text-center max-w-sm w-full">
-          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow p-8 max-w-md w-full">
+          {/* Success header */}
+          <div className="text-center mb-6">
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-slate-900 text-xl font-bold mb-1">Reply sent!</h2>
+            <p className="text-slate-400 text-sm">Your email has been delivered successfully.</p>
           </div>
-          <h2 className="text-slate-900 text-xl font-bold mb-1">Reply sent!</h2>
-          <p className="text-slate-400 text-sm mb-6">Your email has been delivered successfully.</p>
-          <button
-            onClick={() => router.push('/inbox')}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors w-full"
-          >
-            Back to Inbox
-          </button>
+
+          {/* Feedback form */}
+          {!feedbackSubmitted ? (
+            <div className="border-t border-slate-100 pt-6">
+              <p className="text-slate-700 text-sm font-semibold mb-3 text-center">How was the AI reply?</p>
+
+              {/* Star rating */}
+              <div className="flex justify-center gap-2 mb-4">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    onClick={() => setStarRating(star)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <svg
+                      className={`w-8 h-8 ${star <= starRating ? 'text-amber-400' : 'text-slate-200'} transition-colors`}
+                      fill="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+
+              {/* Text feedback */}
+              <textarea
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                placeholder="Any comments? (optional)"
+                rows={3}
+                className="w-full text-sm text-slate-700 bg-slate-50 border border-slate-200 rounded-xl p-3 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none mb-4"
+              />
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => router.push('/inbox')}
+                  className="flex-1 text-slate-400 hover:text-slate-700 text-sm font-medium py-2.5 rounded-xl border border-slate-200 hover:border-slate-300 transition-colors"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={handleFeedback}
+                  disabled={starRating === 0 || submittingFeedback}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white font-semibold py-2.5 rounded-xl transition-colors"
+                >
+                  {submittingFeedback ? 'Submitting...' : 'Submit'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="border-t border-slate-100 pt-6 text-center">
+              <p className="text-slate-600 text-sm mb-4">Thanks for your feedback!</p>
+              <button
+                onClick={() => router.push('/inbox')}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors w-full"
+              >
+                Back to Inbox
+              </button>
+            </div>
+          )}
         </div>
       </div>
     )
