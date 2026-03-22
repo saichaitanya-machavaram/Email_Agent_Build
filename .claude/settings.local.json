@@ -22,7 +22,9 @@
       "Bash(rm -rf /c/Users/chait/Desktop/email-agent-app)",
       "Bash(npm install:*)",
       "Bash(npm run:*)",
-      "Bash(git commit -m \"Phase 1: Next.js scaffold, Supabase schema, auth setup:*)"
+      "Bash(git commit -m \"Phase 1: Next.js scaffold, Supabase schema, auth setup:*)",
+      "Bash(curl:*)",
+      "Bash(git commit -m \"Phase 1 complete: auth working, inbox placeholder:*)"
     ]
   }
 }
