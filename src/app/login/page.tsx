@@ -16,17 +16,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-10 flex flex-col items-center gap-6 w-full max-w-sm">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-10 flex flex-col items-center gap-6 w-full max-w-sm">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-2xl font-bold">E</div>
-          <h1 className="text-white text-2xl font-semibold">Email Agent</h1>
-          <p className="text-gray-400 text-sm text-center">Sign in to manage and reply to your emails with AI</p>
+          <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow">
+            E
+          </div>
+          <h1 className="text-slate-900 text-2xl font-bold tracking-tight">Email Agent</h1>
+          <p className="text-slate-500 text-sm text-center">AI-powered email replies for Vizaura</p>
         </div>
+
+        <div className="w-full h-px bg-slate-100" />
 
         <button
           onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-900 font-medium py-3 px-4 rounded-xl transition-colors"
+          className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-medium py-3 px-4 rounded-xl transition-colors shadow-sm"
         >
           <svg width="20" height="20" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -37,8 +41,8 @@ export default function LoginPage() {
           Continue with Google
         </button>
 
-        <p className="text-gray-600 text-xs text-center">
-          Only the authorized account owner can access this app.
+        <p className="text-slate-400 text-xs text-center">
+          Access restricted to authorized account only.
         </p>
       </div>
     </div>

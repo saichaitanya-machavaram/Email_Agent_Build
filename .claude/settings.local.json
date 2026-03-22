@@ -29,7 +29,8 @@
       "Bash(git commit -m \"Phase 2: Gmail integration, inbox UI:*)",
       "Bash(git commit -m \"Phase 3: RAG pipeline, AI reply generation, reply page:*)",
       "Bash(git commit -m \"Phase 4: Gmail send flow, reply stored in Supabase:*)",
-      "Bash(git commit -m \"Fix RAG: increase match count to 8, improve prompt accuracy:*)"
+      "Bash(git commit -m \"Fix RAG: increase match count to 8, improve prompt accuracy:*)",
+      "Bash(git commit -m \"UI redesign: executive white/blue theme, markdown strip, processing steps:*)"
     ]
   }
 }

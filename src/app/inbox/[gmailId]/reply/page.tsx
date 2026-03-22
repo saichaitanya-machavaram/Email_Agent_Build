@@ -14,6 +14,31 @@ interface Email {
   received_at: string
 }
 
+type Step = { label: string; status: 'pending' | 'active' | 'done' | 'error' }
+
+const STEPS: Step[] = [
+  { label: 'Fetching email details', status: 'pending' },
+  { label: 'Embedding email for search', status: 'pending' },
+  { label: 'Searching knowledge base', status: 'pending' },
+  { label: 'Generating AI reply', status: 'pending' },
+]
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/```[\s\S]*?```/g, '').replace(/`([^`]+)`/g, '$1')
+    .replace(/\[(.*?)\]\((.*?)\)/g, '$1 ($2)')
+    .replace(/^[-*+]\s+/gm, '• ')
+    .replace(/^\d+\.\s+/gm, (m) => m)
+    .trim()
+}
+
+function getInitials(name: string) {
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
 export default function ReplyPage() {
   const { gmailId } = useParams<{ gmailId: string }>()
   const router = useRouter()
@@ -23,10 +48,15 @@ export default function ReplyPage() {
   const [aiDraft, setAiDraft] = useState('')
   const [replyId, setReplyId] = useState<string | null>(null)
   const [editedReply, setEditedReply] = useState('')
+  const [steps, setSteps] = useState<Step[]>(STEPS.map(s => ({ ...s })))
   const [generating, setGenerating] = useState(false)
   const [sending, setSending] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
+
+  const setStepStatus = (index: number, status: Step['status']) => {
+    setSteps(prev => prev.map((s, i) => i === index ? { ...s, status } : s))
+  }
 
   useEffect(() => {
     const fetchEmail = async () => {
@@ -37,30 +67,60 @@ export default function ReplyPage() {
         .single()
       if (data) {
         setEmail(data)
-        generateReply(data)
+        generateReply()
       }
     }
     fetchEmail()
   }, [gmailId])
 
-  const generateReply = async (emailData: Email) => {
+  const generateReply = async () => {
     setGenerating(true)
     setError('')
+    setAiDraft('')
+    setEditedReply('')
+    const freshSteps = STEPS.map(s => ({ ...s }))
+    setSteps(freshSteps)
+
+    // Step 0
+    setStepStatus(0, 'active')
+    await new Promise(r => setTimeout(r, 400))
+    setStepStatus(0, 'done')
+
+    // Step 1
+    setStepStatus(1, 'active')
+    await new Promise(r => setTimeout(r, 300))
+
     try {
-      const res = await fetch('/api/ai/generate-reply', {
+      // Steps 2 & 3 happen server-side — we animate them with a slight delay
+      const fetchPromise = fetch('/api/ai/generate-reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gmailId }),
       })
+
+      // Animate steps 1→2→3 while waiting
+      await new Promise(r => setTimeout(r, 600))
+      setStepStatus(1, 'done')
+      setStepStatus(2, 'active')
+      await new Promise(r => setTimeout(r, 800))
+      setStepStatus(2, 'done')
+      setStepStatus(3, 'active')
+
+      const res = await fetchPromise
       const data = await res.json()
+
       if (data.error) {
+        setStepStatus(3, 'error')
         setError(data.error)
       } else {
-        setAiDraft(data.aiDraft)
-        setEditedReply(data.aiDraft)
+        setStepStatus(3, 'done')
+        const clean = stripMarkdown(data.aiDraft)
+        setAiDraft(clean)
+        setEditedReply(clean)
         setReplyId(data.replyId)
       }
     } catch (err: any) {
+      setStepStatus(3, 'error')
       setError(err.message)
     } finally {
       setGenerating(false)
@@ -81,7 +141,6 @@ export default function ReplyPage() {
           to: email.from_email,
           subject: email.subject,
           body: editedReply,
-          threadId: email.gmail_id,
         }),
       })
       const data = await res.json()
@@ -89,7 +148,6 @@ export default function ReplyPage() {
         setError(data.error)
       } else {
         setSent(true)
-        setTimeout(() => router.push('/inbox'), 2000)
       }
     } finally {
       setSending(false)
@@ -98,108 +156,176 @@ export default function ReplyPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-5xl mb-4">✅</div>
-          <h2 className="text-white text-xl font-semibold mb-2">Email sent!</h2>
-          <p className="text-gray-400 text-sm">Redirecting to inbox...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="bg-white border border-slate-200 rounded-2xl shadow p-10 text-center max-w-sm w-full">
+          <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h2 className="text-slate-900 text-xl font-bold mb-1">Reply sent!</h2>
+          <p className="text-slate-400 text-sm mb-6">Your email has been delivered successfully.</p>
+          <button
+            onClick={() => router.push('/inbox')}
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors w-full"
+          >
+            Back to Inbox
+          </button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div className="min-h-screen bg-slate-50 flex flex-col">
       {/* Header */}
-      <header className="border-b border-gray-800 px-6 py-4 flex items-center gap-4">
-        <button onClick={() => router.push('/inbox')} className="text-gray-400 hover:text-white transition-colors">
-          ← Back
+      <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-4 shadow-sm">
+        <button onClick={() => router.push('/inbox')} className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors">
+          ← Inbox
         </button>
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">E</div>
-          <span className="text-white font-semibold">Email Agent</span>
+        <div className="h-4 w-px bg-slate-200" />
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">E</div>
+          <span className="text-slate-900 font-bold">Email Agent</span>
         </div>
       </header>
 
-      <div className="flex-1 max-w-4xl w-full mx-auto p-6 flex flex-col gap-6">
+      <div className="flex-1 max-w-4xl w-full mx-auto p-6 flex flex-col gap-5">
+
         {/* Original email */}
         {email && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-gray-500 text-xs uppercase tracking-wide font-medium">Original Email</span>
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50">
+              <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">Original Email</span>
             </div>
-            <h2 className="text-white font-semibold mb-2">{email.subject || '(no subject)'}</h2>
-            <p className="text-gray-400 text-sm mb-3">From: {email.from_name || email.from_email} &lt;{email.from_email}&gt;</p>
-            <p className="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed line-clamp-6">{email.body_text}</p>
+            <div className="p-5">
+              <h2 className="text-slate-900 font-bold text-lg mb-3">{email.subject || '(no subject)'}</h2>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                  {getInitials(email.from_name || email.from_email)}
+                </div>
+                <div>
+                  <p className="text-slate-800 text-sm font-semibold">{email.from_name || email.from_email}</p>
+                  <p className="text-slate-400 text-xs">{email.from_email}</p>
+                </div>
+              </div>
+              <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{email.body_text}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Processing steps */}
+        {generating && (
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5">
+            <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mb-4">Processing</p>
+            <div className="flex flex-col gap-3">
+              {steps.map((step, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
+                    step.status === 'done' ? 'bg-green-100' :
+                    step.status === 'active' ? 'bg-blue-100' :
+                    step.status === 'error' ? 'bg-red-100' :
+                    'bg-slate-100'
+                  }`}>
+                    {step.status === 'done' && (
+                      <svg className="w-3 h-3 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {step.status === 'active' && (
+                      <div className="w-2.5 h-2.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {step.status === 'error' && (
+                      <svg className="w-3 h-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                    {step.status === 'pending' && (
+                      <div className="w-2 h-2 rounded-full bg-slate-300" />
+                    )}
+                  </div>
+                  <span className={`text-sm ${
+                    step.status === 'active' ? 'text-blue-600 font-medium' :
+                    step.status === 'done' ? 'text-slate-700' :
+                    step.status === 'error' ? 'text-red-500' :
+                    'text-slate-400'
+                  }`}>{step.label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* AI Draft */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex-1 flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-gray-500 text-xs uppercase tracking-wide font-medium">AI Draft Reply</span>
-            {aiDraft && !generating && (
-              <button
-                onClick={() => email && generateReply(email)}
-                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-              >
-                ↺ Regenerate
-              </button>
-            )}
-          </div>
-
-          {generating ? (
-            <div className="flex-1 flex flex-col items-center justify-center py-12 gap-3">
-              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-gray-400 text-sm">Searching knowledge base & generating reply...</p>
+        {!generating && (
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+              <span className="text-slate-500 text-xs font-semibold uppercase tracking-wider">AI Draft Reply</span>
+              {aiDraft && (
+                <button
+                  onClick={generateReply}
+                  className="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors flex items-center gap-1"
+                >
+                  ↺ Regenerate
+                </button>
+              )}
             </div>
-          ) : error ? (
-            <div className="text-red-400 text-sm p-4 bg-red-900/20 rounded-lg">{error}</div>
-          ) : (
-            <textarea
-              value={editedReply}
-              onChange={(e) => setEditedReply(e.target.value)}
-              className="flex-1 w-full bg-gray-800 text-gray-200 text-sm rounded-lg p-4 border border-gray-700 focus:border-blue-500 focus:outline-none resize-none leading-relaxed min-h-64"
-              placeholder="AI reply will appear here..."
-              rows={16}
-            />
-          )}
+            <div className="p-5">
+              {error ? (
+                <div className="text-red-600 text-sm p-4 bg-red-50 border border-red-200 rounded-lg">{error}</div>
+              ) : (
+                <>
+                  <textarea
+                    value={editedReply}
+                    onChange={(e) => setEditedReply(e.target.value)}
+                    className="w-full bg-slate-50 text-slate-800 text-sm rounded-lg p-4 border border-slate-200 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 resize-none leading-relaxed min-h-64 font-mono"
+                    placeholder="AI reply will appear here..."
+                    rows={16}
+                  />
+                  {aiDraft && editedReply !== aiDraft && (
+                    <p className="text-amber-600 text-xs mt-2 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                      Draft edited
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
 
-          {aiDraft && editedReply !== aiDraft && (
-            <p className="text-yellow-500 text-xs mt-2">✏️ You&apos;ve edited this reply</p>
-          )}
-        </div>
-
-        {error && <p className="text-red-400 text-sm">{error}</p>}
-
-        {/* Send button */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => router.push('/inbox')}
-            className="text-gray-400 hover:text-white text-sm transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSend}
-            disabled={!editedReply || generating || sending}
-            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl transition-colors flex items-center gap-2"
-          >
-            {sending ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Sending...
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-                Approve & Send
-              </>
-            )}
-          </button>
-        </div>
+        {/* Actions */}
+        {!generating && (
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => router.push('/inbox')}
+              className="text-slate-400 hover:text-slate-700 text-sm transition-colors font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={!editedReply || sending}
+              className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold px-8 py-3 rounded-xl transition-colors shadow flex items-center gap-2"
+            >
+              {sending ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                  Approve & Send
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
