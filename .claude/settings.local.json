@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd.exe /c \"where gh\" 2>&1)",
+      "Bash(cmd.exe /c \"gh auth status\" 2>&1)",
+      "Bash(cmd.exe /c \"git config --global user.email\")",
+      "Bash(cmd.exe /c \"git config --global user.name\")",
+      "Bash(export PATH=$PATH:/c/Users/chait/AppData/Local/GitHubCLI/bin)",
+      "Bash(git config:*)",
+      "Bash(gh api:*)",
+      "Read(//c/Users/chait/AppData/Local/GitHubCLI/**)",
+      "Read(//c/Users/chait/AppData/Local/**)",
+      "Bash(export PATH=$PATH:\"/c/Program Files/GitHub CLI\")",
+      "Bash(gh auth:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"Initial commit:*)",
+      "Bash(gh repo:*)",
+      "Bash(git commit -m \"Add project idea and detailed CLAUDE.md:*)",
+      "Bash(git push:*)",
+      "Bash(npx create-next-app@latest email-agent-app --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --yes)",
+      "Bash(cp -r /c/Users/chait/Desktop/email-agent-app/. /c/Users/chait/Desktop/Email_Agent/)",
+      "Bash(rm -rf /c/Users/chait/Desktop/email-agent-app)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(git commit -m \"Phase 1: Next.js scaffold, Supabase schema, auth setup:*)"
+    ]
+  }
+}
