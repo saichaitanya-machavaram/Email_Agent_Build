@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { google } from 'googleapis'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import OpenAI from 'openai'
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 
 function makeRawEmail({
   to,
@@ -30,6 +34,16 @@ function makeRawEmail({
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=+$/, '')
+}
+
+async function embedAndStoreReply(replyId: string, sentReply: string) {
+  const res = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: sentReply.slice(0, 8000),
+  })
+  const embedding = res.data[0].embedding
+  const admin = createAdminClient()
+  await admin.from('replies').update({ embedding }).eq('id', replyId)
 }
 
 export async function POST(request: NextRequest) {
@@ -106,6 +120,9 @@ export async function POST(request: NextRequest) {
       .from('emails')
       .update({ is_replied: true })
       .eq('gmail_id', gmailId)
+
+    // Embed the sent reply in the background for future few-shot context
+    embedAndStoreReply(replyId, body).catch(console.error)
 
     return NextResponse.json({ success: true })
   } catch (err: any) {

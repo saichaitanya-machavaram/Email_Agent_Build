@@ -33,7 +33,8 @@
       "Bash(git commit -m \"UI redesign: executive white/blue theme, markdown strip, processing steps:*)",
       "Bash(vercel whoami:*)",
       "Bash(vercel:*)",
-      "Bash(git commit -m \"Phase 5: feedback form, Vercel deployment:*)"
+      "Bash(git commit -m \"Phase 5: feedback form, Vercel deployment:*)",
+      "Bash(git commit -m \"Systematic feedback loop: embed replies, few-shot context in RAG:*)"
     ]
   }
 }
