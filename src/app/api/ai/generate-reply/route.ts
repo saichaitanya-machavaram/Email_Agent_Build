@@ -32,11 +32,11 @@ export async function POST(request: NextRequest) {
     })
     const queryEmbedding = embeddingRes.data[0].embedding
 
-    // RAG: fetch top 5 relevant courses
+    // RAG: fetch top 8 relevant courses
     const admin = createAdminClient()
-    const { data: docs, error: ragError } = await admin.rpc('match_documents', {
+    const { data: docs } = await admin.rpc('match_documents', {
       query_embedding: queryEmbedding,
-      match_count: 5,
+      match_count: 8,
     })
 
     const context = docs && docs.length > 0
@@ -51,9 +51,14 @@ export async function POST(request: NextRequest) {
           role: 'system',
           content: `You are a helpful email assistant for Vizaura, an online education platform.
 You help respond to inquiries about courses and programs.
-Use the provided course information to craft accurate, helpful, and friendly email replies.
-Always be professional, concise, and specific. Include relevant course details like price, dates, and mode of delivery when applicable.
-Sign off as "The Vizaura Team".`,
+
+Important rules:
+- Only mention courses that are explicitly listed in the provided knowledge base context.
+- If the exact course mentioned in the email is not in the knowledge base, clearly state that the course is not currently available, then suggest the most relevant courses from the context.
+- Never invent course names, prices, dates, or details.
+- Always be professional, concise, and friendly.
+- Include relevant details like price, starting date, delivery mode, and course link.
+- Sign off as "The Vizaura Team".`,
         },
         {
           role: 'user',
@@ -65,15 +70,15 @@ ${email.body_text}
 
 ---
 
-Relevant course information from our knowledge base:
+Available courses from our knowledge base (only use these):
 ${context}
 
 ---
 
-Please write a professional email reply addressing their inquiry. Use the course information above where relevant.`,
+Write a professional email reply. If the exact course they asked about is not listed above, say it is not currently available and suggest the closest alternatives from the list.`,
         },
       ],
-      temperature: 0.7,
+      temperature: 0.5,
     })
 
     const aiDraft = completion.choices[0].message.content || ''
