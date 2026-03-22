@@ -34,7 +34,8 @@
       "Bash(vercel whoami:*)",
       "Bash(vercel:*)",
       "Bash(git commit -m \"Phase 5: feedback form, Vercel deployment:*)",
-      "Bash(git commit -m \"Systematic feedback loop: embed replies, few-shot context in RAG:*)"
+      "Bash(git commit -m \"Systematic feedback loop: embed replies, few-shot context in RAG:*)",
+      "Bash(git commit -m \"Add restart guide and Azure migration documentation:*)"
     ]
   }
 }
