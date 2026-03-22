@@ -24,7 +24,9 @@
       "Bash(npm run:*)",
       "Bash(git commit -m \"Phase 1: Next.js scaffold, Supabase schema, auth setup:*)",
       "Bash(curl:*)",
-      "Bash(git commit -m \"Phase 1 complete: auth working, inbox placeholder:*)"
+      "Bash(git commit -m \"Phase 1 complete: auth working, inbox placeholder:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git commit -m \"Phase 2: Gmail integration, inbox UI:*)"
     ]
   }
 }
